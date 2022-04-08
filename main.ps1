@@ -8,6 +8,10 @@ function check_health(){
     echo "youtube-dl not installed";
     exit 1;
   }
+
+  if ( !(Test-Path "~/Downloads/mytube") ){
+    mkdir ~/Downloads/mytube;
+  }
 }
 
 function search($query){
@@ -66,4 +70,5 @@ function main(){
   }
 }
 
+check_health
 main
