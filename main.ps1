@@ -14,9 +14,10 @@ function check_health(){
   }
 
   if ( !(Test-Path "~/Downloads/mytube/data.json") ){
-    $new_data = @{}
-    $new_data.videos = @();
-    $new_data.playlist = @{};
+    $new_data = @{
+      videos = @();
+      playlist = @();
+    }
     $new_data | ConvertTo-Json > ~/Downloads/mytube/data.json;
   }
 }
@@ -66,15 +67,15 @@ function main(){
         break;
       }
       {$query -as [int] -gt 0 -and $resultList} {
-        $videoId = $resultList[$([int]$query - 1)].id.videoId;
+        $target_video = $resultList[$([int]$query - 1)]
+        $videoId = $target_video.id.videoId;
         if ($videoId){
           Write-Host "Start downloading ${videoId}...";
-          $video = @{};
-          Write-Host $resultList[$([int]$query - 1)]
-          $video.title = $resultList[$([int]$query - 1)].snippet.title;
-          $video.id = $videoId;
-          $video.channel = $resultList[$([int]$query - 1)].snippet.channelTitle;
-          $downloaded_videos.videos += $video;
+          $downloaded_videos.videos += @{
+            id = $videoId;
+            title = $target_video.snippet.title;
+            channel = $target_video.snippet.channelTitle;
+          };
           youtube-dl $videoId --no-playlist --audio-format wav -x -o "~/Downloads/mytube/${videoId}.%(ext)s" --verbose && Write-Host "Download complete ${videoId}" &
         }
         break;
