@@ -20,28 +20,48 @@ function getVideos($HTTPResponse){
   return $ResultsObject.items | ?{ $_.id.kind -eq 'youtube#video' }
 }
 
-function show_and_select_result($Videos){
+function show_result($Videos){
   $index = 0;
   $Videos | %{
     $index++;
     Write-Host $("{0:D2} - $($_.snippet.title)" -f $index);
   }
-  try{
-    return [int]$(Read-Host -Prompt "Select a video ");
-  }catch{
-    Write-Host "Please type a number";
-    return -1;
-  }
 }
 
 function main(){
+  $resultList = @();
+
   while($true){
-    $query = Read-Host -p "Search ";
-    $resultList = getVideos(search($query));
-    $select = show_and_select_result($resultList);
-    $videoId = $resultList[$($select - 1)].id.videoId
-    if ( $select -gt 0){
-      youtube-dl $videoId --no-playlist --audio-format wav -x -o "${videoId}.%(ext)s" --verbose && Write-Host "Download complete ${videoId}" &
+    $query = Read-Host -p "Enter /<text> to search for videos";
+
+    # 入力内容から操作を分岐させる
+    switch ($query){
+      "exit"{
+        exit;
+      }
+      "help"{
+        Write-Host "exit: exit the program";
+        Write-Host "help: show this help";
+        Write-Host "/<text>: search videos";
+        break;
+      }
+      {$query[0] -eq '/'} {
+        $query = $query.Substring(1);
+        $resultList = getVideos(search($query));
+        show_result($resultList)
+        break;
+      }
+      {$query -as [int] -gt 0 -and $resultList} {
+        $videoId = $resultList[$([int]$query - 1)].id.videoId;
+        if ($videoId){
+          Write-Host "Start downloading ${videoId}...";
+          youtube-dl $videoId --no-playlist --audio-format wav -x -o "${videoId}.%(ext)s" --verbose && Write-Host "Download complete ${videoId}" &
+        }
+        break;
+      }
+      default{
+        Write-Host "Invalid query"
+      }
     }
   }
 }
