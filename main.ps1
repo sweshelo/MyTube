@@ -30,6 +30,7 @@ function show_result($Videos){
     $index++;
     Write-Host $("{0:D2} - $($_.snippet.title)" -f $index);
   }
+  Write-Host ""
 }
 
 function main(){
@@ -40,7 +41,7 @@ function main(){
 
     # 入力内容から操作を分岐させる
     switch ($query){
-      "exit"{
+      {$query -eq "exit" -or $query -eq "quit" -or $query -eq "q"}{
         exit;
       }
       "help"{
@@ -67,6 +68,7 @@ function main(){
         Write-Host "Invalid query"
       }
     }
+    Write-Host ""
   }
 }
 
