@@ -9,6 +9,13 @@ function check_health(){
     exit 1;
   }
 
+  try{
+    $mpv = $(mpv --version);
+  }catch{
+    echo "mpv not installed";
+    iwr -useb get.scoop.sh | iex && scoop install mpv
+  }
+
   if ( !(Test-Path "~/Downloads/mytube") ){
     mkdir ~/Downloads/mytube;
   }
@@ -36,13 +43,14 @@ function show_result($Videos){
   $index = 0;
   $Videos | %{
     $index++;
-    Write-Host $("{0:D2} - $($_.snippet.title)" -f $index);
+    Write-Host $("{0:D2} - $($_.snippet.title + $_.title)" -f $index);
   }
   Write-Host ""
 }
 
 function main(){
   $resultList = @();
+  $mode = "remote";
   $downloaded_videos = cat ~/Downloads/mytube/data.json | ConvertFrom-Json
 
   while($true){
@@ -58,15 +66,23 @@ function main(){
         Write-Host "exit: exit the program";
         Write-Host "help: show this help";
         Write-Host "/<text>: search videos";
+        Write-Host "<Number>: download the video";
+        Write-Host "local: change to local mode";
         break;
       }
+      "play"{
+        $mode = "local";
+        $resultList = $downloaded_videos.videos;
+        show_result($downloaded_videos.videos);
+      }
       {$query[0] -eq '/'} {
+        $mode = "remote";
         $query = $query.Substring(1);
         $resultList = getVideos(search($query));
         show_result($resultList)
         break;
       }
-      {$query -as [int] -gt 0 -and $resultList} {
+      {$query -as [int] -gt 0 -and $mode -eq "remote"} {
         $target_video = $resultList[$([int]$query - 1)]
         $videoId = $target_video.id.videoId;
         if ($videoId){
@@ -76,9 +92,13 @@ function main(){
             title = $target_video.snippet.title;
             channel = $target_video.snippet.channelTitle;
           };
-          youtube-dl $videoId --no-playlist --audio-format wav -x -o "~/Downloads/mytube/${videoId}.%(ext)s" --verbose && Write-Host "Download complete ${videoId}" &
+          youtube-dl $videoId --no-playlist --audio-format wav -x -o "~/Downloads/mytube/${videoId}.%(ext)s" --verbose && Write-Host "Download complete ${videoId}" && $downloaded_videos | ConvertTo-Json > ~/Downloads/mytube/data.json &
         }
         break;
+      }
+      {$query -as [int] -gt 0 -and $mode -eq "local"} {
+        $target_path = "~/Downloads/mytube/" + $resultList[$([int]$query - 1)].id + ".wav"
+        mpv $(Convert-Path $target_path)
       }
       default{
         Write-Host "Invalid query"
