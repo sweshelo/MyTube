@@ -55,7 +55,7 @@ function main(){
         $videoId = $resultList[$([int]$query - 1)].id.videoId;
         if ($videoId){
           Write-Host "Start downloading ${videoId}...";
-          youtube-dl $videoId --no-playlist --audio-format wav -x -o "${videoId}.%(ext)s" --verbose && Write-Host "Download complete ${videoId}" &
+          youtube-dl $videoId --no-playlist --audio-format wav -x -o "~/Downloads/mytube/${videoId}.%(ext)s" --verbose && Write-Host "Download complete ${videoId}" &
         }
         break;
       }
