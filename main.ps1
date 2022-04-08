@@ -12,6 +12,13 @@ function check_health(){
   if ( !(Test-Path "~/Downloads/mytube") ){
     mkdir ~/Downloads/mytube;
   }
+
+  if ( !(Test-Path "~/Downloads/mytube/data.json") ){
+    $new_data = @{}
+    $new_data.videos = @();
+    $new_data.playlist = @{};
+    $new_data | ConvertTo-Json > ~/Downloads/mytube/data.json;
+  }
 }
 
 function search($query){
@@ -35,6 +42,7 @@ function show_result($Videos){
 
 function main(){
   $resultList = @();
+  $downloaded_videos = cat ~/Downloads/mytube/data.json | ConvertFrom-Json
 
   while($true){
     $query = Read-Host -p "Enter /<text> to search for videos";
@@ -42,6 +50,7 @@ function main(){
     # 入力内容から操作を分岐させる
     switch ($query){
       {$query -eq "exit" -or $query -eq "quit" -or $query -eq "q"}{
+        $downloaded_videos | ConvertTo-Json > ~/Downloads/mytube/data.json
         exit;
       }
       "help"{
@@ -60,6 +69,12 @@ function main(){
         $videoId = $resultList[$([int]$query - 1)].id.videoId;
         if ($videoId){
           Write-Host "Start downloading ${videoId}...";
+          $video = @{};
+          Write-Host $resultList[$([int]$query - 1)]
+          $video.title = $resultList[$([int]$query - 1)].snippet.title;
+          $video.id = $videoId;
+          $video.channel = $resultList[$([int]$query - 1)].snippet.channelTitle;
+          $downloaded_videos.videos += $video;
           youtube-dl $videoId --no-playlist --audio-format wav -x -o "~/Downloads/mytube/${videoId}.%(ext)s" --verbose && Write-Host "Download complete ${videoId}" &
         }
         break;
