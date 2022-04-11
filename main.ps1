@@ -39,6 +39,19 @@ function getVideos($HTTPResponse){
   return $ResultsObject.items | Where-Object{ $_.id.kind -eq 'youtube#video' }
 }
 
+function expand($str){
+  return $str.Split(",") | %{
+    if($_.Contains("-")){
+      $val=$_.Split("-");
+      for($i=[int]$val[0]; $i -le [int]$val[1]; $i++){
+        [int]$i;
+      }
+    }elseif ([int]$_ -ne 0){
+      [int]$_;
+    }
+  }
+}
+
 function show_result($Videos){
   $index = 0;
   $Videos | ForEach-Object{
