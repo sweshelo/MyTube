@@ -40,7 +40,7 @@ function getVideos($HTTPResponse){
 }
 
 function expand_to_array([string]$str){
-  return $str.Split(",") | %{
+  return $str.Split(",") | ForEach-Object{
     if($_.Contains("-")){
       $val=$_.Split("-");
       $start = convertTo-int($val[0]);
@@ -128,7 +128,7 @@ function main(){
 
     # ダウンロード
     if ($splited_query.Length -gt 0 -and $mode -eq "remote"){
-      $splited_query | %{
+      $splited_query | ForEach-Object{
         $videoIndex = $_;
         $target_video = $resultList[$($videoIndex - 1)];
         $videoId = $target_video.id.videoId;
@@ -147,10 +147,10 @@ function main(){
 
     # 再生
     if($splited_query.Length -gt 0 -and $mode -eq "local") {
-      $splited_query | %{
+      $splited_query | ForEach-Object{
         $videoIndex = $_;
         $target_path = "~/Downloads/mytube/" + $resultList[$($videoIndex - 1)].id + ".wav";
-        echo "Start : $target_path"
+        Write-Output "Start : $target_path"
         mpv $(Convert-Path $target_path);
       }
       continue;
