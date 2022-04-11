@@ -1,19 +1,19 @@
-# Import API Key
+﻿# Import API Key
 . ./key.ps1
 
 function check_health(){
   try{
-    $youtube_dl = $(youtube-dl --version);
+    $null = $(youtube-dl --version);
   }catch{
-    echo "youtube-dl not installed";
+    Write-Output "youtube-dl not installed";
     exit 1;
   }
 
   try{
-    $mpv = $(mpv --version);
+    $null = $(mpv --version);
   }catch{
-    echo "mpv not installed";
-    iwr -useb get.scoop.sh | iex && scoop install mpv
+    Write-Output "mpv not installed";
+    Invoke-WebRequest -useb get.scoop.sh | Invoke-Expression && scoop install mpv
   }
 
   if ( !(Test-Path "~/Downloads/mytube") ){
@@ -31,17 +31,17 @@ function check_health(){
 
 function search($query){
   $paramStrings = "part=snippet&q=" + $query + "&key=" + $API_KEY + "&maxResults=10" + "&type=video";
-  return $(iwr "https://www.googleapis.com/youtube/v3/search?$paramStrings");
+  return $(Invoke-WebRequest "https://www.googleapis.com/youtube/v3/search?$paramStrings");
 }
 
 function getVideos($HTTPResponse){
   $ResultsObject = $HTTPResponse.Content | ConvertFrom-Json;
-  return $ResultsObject.items | ?{ $_.id.kind -eq 'youtube#video' }
+  return $ResultsObject.items | Where-Object{ $_.id.kind -eq 'youtube#video' }
 }
 
 function show_result($Videos){
   $index = 0;
-  $Videos | %{
+  $Videos | ForEach-Object{
     $index++;
     Write-Host $("{0:D2} - $($_.snippet.title + $_.title)" -f $index);
   }
@@ -51,7 +51,7 @@ function show_result($Videos){
 function main(){
   $resultList = @();
   $mode = "remote";
-  $downloaded_videos = cat ~/Downloads/mytube/data.json | ConvertFrom-Json
+  $downloaded_videos = Get-Content ~/Downloads/mytube/data.json | ConvertFrom-Json
 
   while($true){
     $query = Read-Host -p "Enter /<text> to search for videos";
